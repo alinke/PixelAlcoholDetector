@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      android:versionCode="12"
+      android:versionName="2.6" package="com.ledpixelart.breath">
+	   
+	 
+	    <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="10"/>
+	 
+	 <uses-permission android:name="android.permission.BLUETOOTH"></uses-permission> 
+	    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+	    <uses-permission android:name="android.permission.VIBRATE" android:required="false" /> 	 
+	   
+      
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:persistent="true" android:theme="@style/CustomButton">
+         <uses-library android:name="com.google.android.maps" />
+        
+         <uses-library android:name="com.android.future.usb.accessory" android:required="false" />	   
+        <activity android:name=".breath"
+            	  android:launchMode="singleTask"
+                  android:label="@string/app_name"
+				  android:configChanges="orientation|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
+            </intent-filter>
+            
+            <meta-data android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
+                                  android:resource="@xml/accessory_filter" />
+            
+        </activity>
+        <activity android:name="preferences"></activity>
+        <activity android:name="SocialMediaAccounts"></activity>
+        <activity android:name="action" android:launchMode="singleTask"></activity>
+        <activity android:name="getLocation" android:launchMode="singleTask"></activity>
+        <activity android:name="getTaxi" android:launchMode="singleTask"></activity>
+        <activity android:name="whereami" android:launchMode="singleTask"></activity>
+        <activity android:name="facebookPost" android:launchMode="singleTask"></activity>
+        <activity android:name="tweetPost" android:launchMode="singleTask"></activity>
+        <activity android:name="Places" android:launchMode="singleTask"></activity>
+        <activity android:name="FriendsList" android:launchMode="singleTask"></activity>
+        
+        <activity android:name=".PrepareRequestTokenActivity" android:launchMode="singleTask">>
+				<intent-filter>
+					<action android:name="android.intent.action.VIEW" />
+					<category android:name="android.intent.category.DEFAULT" />
+					<category android:name="android.intent.category.BROWSABLE" />
+					<data android:scheme="x-oauthflow-twitter" android:host="callback" />
+				</intent-filter>
+		</activity> 
+</application>
+		
+ 		
+    
+</manifest> 
