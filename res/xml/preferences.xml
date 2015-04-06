@@ -81,6 +81,12 @@
     android:defaultValue="@string/pref_disablesleep_default"
     android:summary="@string/menuDisableSleepSummary"/>
     
+    <CheckBoxPreference
+    android:title="@string/KioskMode"
+    android:key="pref_KioskMode"
+    android:defaultValue="@string/pref_KioskModeDefault"
+    android:summary="@string/KioskModeSummary"/>
+  
     
     <CheckBoxPreference
     android:title="@string/menuSimulationMode"
@@ -94,6 +100,22 @@
     android:key="pref_video_response"
     android:summary="Video Responses for Alcohol Readings"/>
     -->
+    
+     <CheckBoxPreference
+    android:title="@string/AutoSelectPanel"
+    android:key="pref_AutoSelectPanel"
+    android:defaultValue="@string/pref_AutoSelectPanelDefault"
+    android:summary="@string/AutoSelectPanelSummary"/>
+    
+   
+    <ListPreference
+    android:key="@string/selected_matrix"
+    android:title="@string/matrix"
+    android:summary="@string/matrixSummary"
+    android:entries="@array/matrix_options"
+    android:entryValues="@array/matrix_values"
+    android:dialogTitle="@string/dialogTitleMatrix"
+    android:defaultValue="@string/matrix_default_value" />
     
     <EditTextPreference
     android:title="@string/menuCountdown"
@@ -129,6 +151,14 @@
 	    android:maxLength="3"
 	    android:defaultValue="@string/max_value"
 	    android:summary="@string/menuHighRangeSummary"/>
+	      
+	        <EditTextPreference
+	    android:title="@string/alcoholPin"
+	    android:key="@string/pref_alcoholPin"
+	    android:numeric="integer"
+	    android:maxLength="2"
+	    android:defaultValue="@string/alcoholPinDefault"
+	    android:summary="@string/alcoholPinSummary"/>
 	    
 	   
       </PreferenceCategory>

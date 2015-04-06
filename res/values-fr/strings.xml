@@ -99,7 +99,7 @@
    
    <string name="userAcceptanceString">"This app is for entertainment purposes only. \n\nDo not use this app to determine whether you should operate a motor vehicle or equipment."</string>
    <string name="userAcceptanceStringTitle">Divertissement Utiliser uniquement</string>
-   <string name="setupInstructionsString">1. Bluetooth pair to the alcohol detector using code 4545 if your phone is Android 2.3.3 and above. \n\n
+   <string name="setupInstructionsString">1. Bluetooth pair to the alcohol detector using code 0000 if your phone is Android 2.3.3 and above. \n\n
 	       			2. If your phone is below 2.3.3, connect using a USB cable and also turn on USB Debugging from Settings --> Applications --> Development --> USB debugging.\n\n 
 	       			3. This app is for entertainment purposes only. Do not use this app as a tool to determine whether you should operate a motor vehicle or equipment.\n\n
 	       			4. While the alcohol detector does contain a real alcohol sensor, it does not output BAC and rather gives results at four levels of alcohol level detection granularity: no alcohol detected, almost sober, tipsy, and drunk.\n\n
@@ -107,7 +107,7 @@
 	       			6. Do not blow smoke, food, or liquids into the alcohol detector as this will damage the sensor.\n\n 
 	       		    Please drink responsibly. More info at http://droidalyzer.com."</string>
    <string name="setupInstructionsStringTitle">Instructions d\&apos;installation</string>   
-   <string name="notFoundString">"If using Bluetooth, make sure you've Bluetooth paired to the device using code 4545.\n\nIf connecting with a USB cable, ensure USB Debugging is turned on from Settings --> Applications --> Development --> USB debugging"</string>
+   <string name="notFoundString">"If using Bluetooth, make sure you've Bluetooth paired to the device using code 0000.\n\nIf connecting with a USB cable, ensure USB Debugging is turned on from Settings --> Applications --> Development --> USB debugging"</string>
    <string name="notFoundStringTitle">Détecteur d\&apos;alcool introuvable</string>   
    <string name="instructionsString">"After tapping the beer icon to begin, breathe into the alcohol sensor as if you were fogging up a window or say "haaaaaaaaah". Do not touch the sensor with your lips.\n\nTap the character icon to select different voices as well as other settings.\n\nWait at least 20 minutes after drinking, eating , or smoking before testing.\n\nThis app is for entertainment purposes only. Please Drink Responsibly.</string>
    <string name="instructionsStringTitle">Instructions</string>   
@@ -127,7 +127,8 @@
    
     <!--Text Prompts -->
      
-   <string name="blowForText">Coup pour ...</string>    
+   <string name="blowForText">Coup pour ...</string>  
+   <string name="blowText">Blow</string>     
    <string name="pleaseWaitText">S\&apos;il vous plaît patienter...</string>   
    <string name="statusSimulationModeText">mode Simulation</string>
    <string name="statusResettingText">Réinitialisation</string>
@@ -278,7 +279,6 @@
     <string name="actions_facebook_welcome">Logged into Facebook as</string>  
     <string name="pref_hideTaximagicTitle">Hide Taxi Magic</string>
     <string name="pref_hideTaximagicSummary">Non US users may want to hide the Taxi Magic button</string>
-    <string name="menu_about_title">About</string>
     <string name="menu_about_summary">Version 1.0\n\nMore info at http://droidalyzer.com\n\nDesigned by Open Gadgets LLC</string>
     <string name="pref_facebook_post_default">true</string>
     <string name="pref_twitter_post_default">false</string>
@@ -295,6 +295,6 @@
     <string name="batteryInfoStringTitle">Droidalyzer Battery</string>
     
      <string name="bluetooth_pair">Blueooth Pairing</string>
-    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to IOIO using code: 4545</string>
+    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to IOIO using code: 0000</string>
     
 </resources>

@@ -2,23 +2,23 @@ package com.ledpixelart.breath;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Locale;
 
 import ioio.lib.api.AnalogInput;
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
+import ioio.lib.api.IOIO.VersionType;
 import ioio.lib.api.exception.ConnectionLostException;
 //import ioio.lib.util.AbstractIOIOActivity; //deprecated
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOActivity;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
@@ -28,10 +28,6 @@ import android.widget.TextView;
 //import android.os.CountDownTimer;
 import alt.android.os.CountDownTimer;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Bitmap.Config;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.media.MediaPlayer;
@@ -46,7 +42,6 @@ import android.widget.ProgressBar;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.Math;
-import java.nio.ByteBuffer;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -54,7 +49,6 @@ import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
-//import android.preference.PreferenceActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.content.Intent;
@@ -67,29 +61,12 @@ import android.telephony.TelephonyManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.preference.PreferenceActivity;
-import oauth.signpost.OAuth;
 import android.widget.Toast;
-//import com.facebook.android.*;
-//import com.facebook.android.Facebook.*;
-//import com.facebook.android.SessionEvents.AuthListener;
-//import com.facebook.android.SessionEvents.LogoutListener;
-//import com.facebook.android.AsyncFacebookRunner;
-//import com.facebook.android.Facebook;
-//import com.facebook.android.Utility;
-//import com.facebook.android.LoginButton;
-import com.facebook.android.AsyncFacebookRunner;
-import com.facebook.android.BaseRequestListener;
-import com.facebook.android.Facebook;
-import com.facebook.android.SessionEvents;
-import com.facebook.android.SessionStore;
-import com.facebook.android.SessionEvents.AuthListener;
-import com.facebook.android.SessionEvents.LogoutListener;
-import com.facebook.android.Utility;
-
 import android.widget.ViewFlipper;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+
 import com.freddymartens.android.widgets.*;
 
 import android.util.Log;
@@ -99,9 +76,12 @@ import android.os.Message;
 //public class breath extends AbstractIOIOActivity implements TextToSpeech.OnInitListener { //this is the old one which was deprecated
 public class breath extends IOIOActivity implements TextToSpeech.OnInitListener { //this is the old one which was deprecated
 //public class breath extends IOIOActivity implements TextToSpeech.OnInitListener {	
-	private static final int alcoholPinNumber = 33; //the pin used on IOIO for the alchohol sensor input
+
+	private  int alcoholPinNumber = 35; //the pin used on IOIO for the alchohol sensor input
+	private  int heatPinNumber = 6; //the pin used on IOIO for the alcohol sensor heat pin is now 1
+	//private static final int heatPinNumber = 1; //the original one
 	//private static final int batteryPinNumber = 41; //the pin used on IOIO for the alchohol sensor input
-	private static final int heatPinNumber = 5; //the pin used on IOIO for the alcohol sensor heat pin is now 1, it used to be 15 in the original prototype
+	//private static final int alcoholPinNumber = 40; 
 	private ioio.lib.api.RgbLedMatrix.Matrix KIND;  //have to do it this way because there is a matrix library conflict
 	private android.graphics.Matrix matrix2;
 	private TextView textView_;
@@ -264,21 +244,13 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 	private String statusNotconnectedText;
 	private String blowPrompt;
 	
-	private short[] frame_ = new short[512];
-  	private short[] rgb_;
+	//private short[] frame_ = new short[512];
+	private short[] frame_;
   	public static final Bitmap.Config FAST_BITMAP_CONFIG = Bitmap.Config.RGB_565;
-  	private Bitmap frame1;
   	private byte[] BitmapBytes;
-  	private byte[] BitmayArray;
-  	private byte[] dotArray;
   	private InputStream BitmapInputStream;
-  	private ByteBuffer bBuffer;
   	private Bitmap canvasBitmap;
-  	private Bitmap originalImage;
-  	private int width_original;
-  	private int height_original; 	  
-  	private float scaleWidth; 
-  	private float scaleHeight; 	  	
+  	private Bitmap originalImage;	
   	private Bitmap resizedBitmap;  	
   	private int resizedFlag = 0;
     private ioio.lib.api.RgbLedMatrix matrix_;
@@ -289,14 +261,10 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 	//private Facebook facebook;
 	//**********************************************************
 	public static final String APP_ID = "305557519478133";
-	//private LoginButton mLoginButton;
     private TextView mText;
     private ImageView mUserPic;
     private Handler mHandler;
     ProgressDialog dialog;
-   // final static int AUTHORIZE_ACTIVITY_RESULT_CODE = 0;
-   // final static int PICK_EXISTING_PHOTO_RESULT_CODE = 1;
-    //private String graph_or_fql;
     private ListView list; 
     //**********************************************	
 
@@ -307,8 +275,39 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 	private String app_ver;	
 	private final String tag = "PIXEL Breath";
 	ViewFlipper flipper;
-	//Gauge meter1;
 	Gauge meter2;
+	private boolean KioskMode_ = false;
+	private boolean AutoSelectPanel_ = true;
+	private int matrix_model;
+	private String matrixIdentifier = "m";
+
+	private static String pixelFirmware = "Not Connected";
+	private static String pixelBootloader = "Not Connected";
+	private static String pixelHardwareID = "Not Connected";
+	private static String IOIOLibVersion = "Not Connected";
+	private static VersionType v;
+	
+	private static int resIdPlsWait;
+	private static int resIdReady;
+	private static int resIdBlow;
+	private static int resIdNoDrinks;
+	private static int resIdFewDrinks;
+	private static int resIdBuzz;
+	private static int resIdDrunk;
+	private static int resIdIndicator1;
+	private static int resIdIndicator2;
+	private static int resIdIndicator3;
+	private static int resIdIndicator4;
+	private static int resIdIndicator5;
+	private static int resIdIndicator6;
+	private static int resIdIndicator7;
+	private static int resIdIndicator8;
+	private static int resIdIndicator9;
+	private static int resIdIndicator10;
+	private static int resIdIndicator11;
+	
+	private boolean onHomeScreen = true;
+	
 	
 	private Animation inFromRightAnimation() {
 
@@ -354,10 +353,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState); 
         mHandler = new Handler(); //used by toast
-       // showToastShort("On Create");
         setContentView(R.layout.main);
         flipper = (ViewFlipper) findViewById(R.id.flipper);
-       // meter1    = (Gauge) findViewById(R.id.meter1);
         meter2    = (Gauge) findViewById(R.id.meter2);        
            	
         this.prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -370,30 +367,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
         {
             Log.v(tag, e.getMessage());
         }
-       
-       
-        //hash code A2OB6D+YlFcTKTFV4ObuPZ7FyMg=  this one may be wrong, check it later
-        //hash code for developer keystore: cH4djuDfq7sZGoTqHx790fkk6Ho=  this is in the facebook app registration profile
-        //facebook app id: 305557519478133
-        //facebook app secret: d064ce81dce9682739aeb8df1eb54d77
-        
-        //production google maps key 0dDNZAtQ_muzm_jmR1RXzqm_ysLwmHNHe8ws15A
-        //md5 cert for release.keystore is: ED:C4:2A:F8:AE:25:84:9B:0C:78:45:32:94:B3:4C:CB
-        
-        //developer map key: 0dDNZAtQ_muyX4_Ajed7gtkvAs2q1-qzbUtvsGA
-        // md5 cert for debug key: 66:07:CC:E7:C0:9F:5F:EB:D5:BD:30:44:5E:16:91:12
-        
-        //facebook test acct: alinke2000@gmail.com
-        
-        //  Twitter Consumer key 	rRKNnOuEYiKYOSlPz4N9oQ
-        //  Twitter Consumer secret 	yWdCMzrRUU703zqxGQgjPcianuMuZYtkZxZ3tyrdhW4
-        //  Request token URL 	https://api.twitter.com/oauth/request_token
-        //  Authorize URL 	https://api.twitter.com/oauth/authorize
-       //   Access token URL 	https://api.twitter.com/oauth/access_token
-       //   Callback URL 	http://androidbreathalyzer.com 
-        
                
-       //Check if TTS is installed
+       //Check if TTS is installed, text to speech
         Intent checkIntent = new Intent();
         checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
         startActivityForResult(checkIntent, MY_DATA_CHECK_CODE);
@@ -410,24 +385,12 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
         //tts.setLanguage(Locale.getDefault());
         
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); //force only portrait mode
-        
-        
       
         //******** preferences code
         resources = this.getResources();
         debug_ = (TextView)findViewById(R.id.debug);
         setPreferences();
         //***************************
-       // Toast.makeText(getBaseContext(), "On Create", Toast.LENGTH_LONG).show();
-       // mAsyncRunner.logout(getContext(), new LogoutRequestListener());    
-        
-       // To change the localization of your application, you can use the following code snippet:
-
-        //	Resources res = getResources();
-        //	Configuration newConfig = new Configuration(res.getConfiguration());
-        //	 newConfig.locale = Locale.SIMPLIFIED_CHINESE;
-        	//newConfig.locale = Locale.ENGLISH;
-        //	res.updateConfiguration(newConfig, null);
   
         if (disable_sleep == true) {        	      	
         	this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -488,6 +451,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
         level4Result = getResources().getString(R.string.level4Result);
         
         blowForText = getResources().getString(R.string.blowForText);
+        blowText = getResources().getString(R.string.blowText);
         pleaseWaitText = getResources().getString(R.string.pleaseWaitText);
         statusSimulationModeText = getResources().getString(R.string.statusSimulationModeText);
         statusResettingText = getResources().getString(R.string.statusResettingText);
@@ -499,14 +463,14 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
         
     	//*********************************************************************************  
       
-        if (show_user_acceptance == true) {
+        if (show_user_acceptance) {
         	AlertDialog.Builder alert=new AlertDialog.Builder(this);
         	alert.setTitle(userAcceptanceStringTitle).setIcon(R.drawable.icon).setMessage(userAcceptanceString).setNeutralButton(AcceptText, null).show();
         }
         
       //  breathIndicator.setMax(max_value - warmupOffset); //this sets the max which is defined in the preferences, default 850
         breathIndicator.setMax(max_value);
-        teleMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);        
+       // teleMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);        
          
         if (shake_start == true) {
         
@@ -546,16 +510,11 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
     	  connectTimer.start(); //this timer will pop up a message box if the Breathalyzer is not found
       }
         
-      //  battery_.setImageResource(R.drawable.battery5selector);
-      
-     
+       
+        
     }
     
-    public void phoneCall(String numtoCall) {
-        //Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("tel:5551212"));
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("tel:" + numtoCall));
-        startActivity(intent);
-    }
+    
     
     public void say(String text2say) {
     	tts.setLanguage(Locale.getDefault()); //let's set the language before talking, we do this dynamically as it can change mid stream
@@ -568,8 +527,6 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
     {
        MenuInflater inflater = getMenuInflater();
        inflater.inflate(R.menu.mainmenu, menu);
-      
-
        return true;
     }
 
@@ -591,11 +548,15 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
     	if (item.getItemId() == R.id.menu_prefs)
        {
     		
+    		//we need to kill any running timers or we'll get a frame size error if the LED panel was changed in prefs
+    		if (breathTimer != null) breathTimer.cancel(); 
+     		if (updateGaugeTimer != null) updateGaugeTimer.cancel();
+     		
     		Intent intent = new Intent()
            		.setClass(this,
            				com.ledpixelart.breath.preferences.class);
        
-           this.startActivityForResult(intent, 0);
+           this.startActivityForResult(intent, 1);
        }
     	
     //	if (item.getItemId() == R.id.menu_socialmediaaccounts) //social media accounts screen
@@ -649,7 +610,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
     	//	 Toast.makeText(getBaseContext(), "On Activity Result Code: " + reqCode, Toast.LENGTH_LONG).show();
         // }      	
     	
-    	setPreferences(); //very important to have this here, after the menu comes back this is called, we'll want to apply the new prefs without having to re-start the app
+    	//setPreferences(); //very important to have this here, after the menu comes back this is called, we'll want to apply the new prefs without having to re-start the app
     	
     	//breathIndicator.setMax(max_value - warmupOffset); //this sets the max which is defined in the preferences
         
@@ -663,6 +624,20 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
     		  enableUi(false);   
     		  setDetected(statusNotconnectedText);		  
     	} 
+    	 
+    	 if (reqCode == 1) { //we came back from preferences so let's take it back to the home beer screen
+    		 
+    		 setPreferences();
+    		 
+    		 //only go back if we're not on the home screen
+    		 
+    		 if (!onHomeScreen) {
+	    		 flipper.setInAnimation(inFromLeftAnimation());
+	             flipper.setOutAnimation(outToRightAnimation());
+	             flipper.showPrevious(); 
+	             onHomeScreen = true;
+    		 }
+    	 }
     	
     	if (reqCode == MY_DATA_CHECK_CODE)
         {
@@ -698,7 +673,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
             }
         }
     	
-        	
+
     	//String extraData=data.getStringExtra("ComingFrom");
     	//debug_.setText(extraData);    	
     	
@@ -716,8 +691,19 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
      countdown = Integer.valueOf(prefs.getString(   
  	        resources.getString(R.string.pref_countdown),
  	        resources.getString(R.string.countdown_duration)));   
+     
+     alcoholPinNumber = Integer.valueOf(prefs.getString(   
+  	        resources.getString(R.string.pref_alcoholPin),
+  	        resources.getString(R.string.alcoholPinDefault)));   
         
      //countdown = Integer.valueOf(prefs.getString("pref_countdown", resources.getString(R.string.countdown_duration))); //countdown duration
+     
+    
+     KioskMode_ =  prefs.getBoolean("pref_KioskMode", false);
+     
+     if (KioskMode_) {
+    	 countdown = 1000000000; //make it really high for the gauge timer as we want it to run the whole time
+     }
      
      show_alcohol_value =  prefs.getBoolean("pref_show_alcohol_value", false); //show the numeric alcohol value or not
      show_user_acceptance =  prefs.getBoolean("pref_show_user_acceptance", false); //if true, a user acceptance box will come up on each startup
@@ -822,85 +808,203 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
    }
     
     
-	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v2 as the default
-	 BitmapInputStream = getResources().openRawResource(R.raw.plswait);
-	 
-	 frame_ = new short [KIND.width * KIND.height];
-     BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
-     
-   //  try {
-//		WriteImagetoMatrix();
-//	} catch (ConnectionLostException e) {
-		// TODO Auto-generated catch block
-//		e.printStackTrace();
-	//}
+    AutoSelectPanel_ = prefs.getBoolean("pref_AutoSelectPanel", true);
+    
+	   
+    matrix_model = Integer.valueOf(prefs.getString(   //the selected RGB LED Matrix Type
+   	        resources.getString(R.string.selected_matrix),
+   	        resources.getString(R.string.matrix_default_value))); 
+    
+    /* PIXEL V2 supported panels
+    I: 32x16 adafruit
+    P: 32x32 seeed, the panel for PIXEL V2
+    S: 64x64 seeed, super pixel original
+    K: 32x32 seeed kiosk no writing
+    V: 64x64 seeed kiosk no writing
+
+    PIXEL V2.5 additional supported panels
+    Q: 32x32 adafruit d pin
+    C: 32x32 adafruit color swap
+    R: 64x32 adafruit d pin
+    T: 64x64 adafruit
+    X: 64x64 adafruit kiosk no writing
+    Y: 32x32 adafruit d pin kiosk no writing
+
+    L: 32x16 low power and 32x16
+    M: 32x32 low power and Seeed 32x32
+    N: 32x32 low power and Adafruit 32x32 D-Pin*/
+    
+    //if (AutoSelectPanel_ && !pixelHardwareID.substring(0,4).equals("PIXL") && pixelHardwareID.substring(0,4).equals("XXXXX")) { //if auto select is on and it's NOT a PIXEL V2 board AND it's a PIXEL V2.5 or above board
+   
+	  if (AutoSelectPanel_ && pixelHardwareID.substring(0,4).equals("PIXL") && !pixelHardwareID.substring(4,5).equals("0")) { // PIXL0008 or PIXL0009 is the normal so if it's just a 0 for the 5th character, then we don't go here
+	    	
+	    	 	//let's first check if we have a matching firmware to auto-select and if not, we'll just go what the matrix from preferences
+		  
+		  		if (pixelHardwareID.substring(4,5).equals("Q")) {
+	    	 		matrix_model = 11;
+	    	 		KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x32;
+	    	 		matrixIdentifier = "m";
+	    	 	}
+	    	 	else if (pixelHardwareID.substring(4,5).equals("T")) {
+	    	 		matrix_model = 14;
+	    	 		KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_64x64;
+	    	 		matrixIdentifier = "s";
+	    	 	}
+	    	 	else if (pixelHardwareID.substring(4,5).equals("I")) {
+	    	 		matrix_model = 1; 
+	    	 		KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x16;
+	    	 		matrixIdentifier = "i";
+	    	 	}
+	    	 	else if (pixelHardwareID.substring(4,5).equals("L")) { //low power
+	    	 		matrix_model = 1; 
+	    	 		KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x16;
+	    	 		matrixIdentifier = "i";
+	    	 	}
+	    	 	else if (pixelHardwareID.substring(4,5).equals("C")) {
+	    	 		matrix_model = 12; 
+	    	 		KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x32_ColorSwap;
+	    	 		matrixIdentifier = "m";
+	    	 	}
+	    	 	else if (pixelHardwareID.substring(4,5).equals("R")) {
+	    	 		matrix_model = 13; 
+	    	 		KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_64x32;
+	    	 		matrixIdentifier = "w";
+	    	 	}
+	    	 	else if (pixelHardwareID.substring(4,5).equals("M")) { //low power
+	    	 		 matrix_model = 3;
+	    	 		 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //pixel v2
+	    	 		 matrixIdentifier = "m";
+	    	 	}
+	    	 	else if (pixelHardwareID.substring(4,5).equals("N")) { //low power
+	    	 		 matrix_model = 11;
+	    	 		 KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x32; //pixel v2.5
+	    	 		 matrixIdentifier = "m";
+	    	 	}
+	    	 	else {  //in theory, we should never go here
+	    	 		KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x32;
+	    	 		matrixIdentifier = "m";
+	    	 	}
+	  		}	
+	  
+	       else {
+		     switch (matrix_model) {  //get this from the preferences
+			     case 0:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x16;
+			    	 matrixIdentifier = "i";
+			    	 break;
+			     case 1:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x16;
+			    	 matrixIdentifier = "i";
+			    	 break;
+			     case 2:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32_NEW; //v1, this matrix was never used
+			    	 matrixIdentifier = "m";
+			    	 break;
+			     case 3:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v2
+			    	 matrixIdentifier = "m";
+			    	 break;
+			     case 4:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_64x32; 
+			    	 matrixIdentifier = "w";
+			    	 break;
+			     case 5:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x64;
+			    	 matrixIdentifier = "w";
+			    	 break;	 
+			     case 6:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_2_MIRRORED; 
+			    	 matrixIdentifier = "w";
+			    	 break;	 	 
+			     case 7: //this one doesn't work and we don't use it rigth now
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_4_MIRRORED;
+			    	 matrixIdentifier = "s";
+			    	 break;
+			     case 8:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_128x32; //horizontal
+			    	 matrixIdentifier = "s";
+			    	 break;	 
+			     case 9:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x128; //vertical mount
+			    	 matrixIdentifier = "s";
+			    	 break;	 
+			     case 10:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_64x64;
+			    	 matrixIdentifier = "s";
+			    	 break;
+			     case 11:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x32;
+			    	 matrixIdentifier = "m";
+			    	 break;	 
+			     case 12:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_32x32_ColorSwap;
+			    	 matrixIdentifier = "m";
+			    	 break;	 	 
+			     case 13:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_64x32;
+			    	 matrixIdentifier = "w";
+			    	 break;	
+			     case 14:
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.ADAFRUIT_64x64;
+			    	 matrixIdentifier = "s";
+			    	 break;	 	 	
+			     default:	    		 
+			    	 KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v2 as the default
+			    	 matrixIdentifier = "m";
+			     }
+	    	 }
+    
+    
+	  resIdPlsWait = getResources().getIdentifier(matrixIdentifier + "plswait" , "raw", this.getPackageName());
+	  resIdReady = getResources().getIdentifier(matrixIdentifier + "ready" , "raw", this.getPackageName());
+	  resIdBlow = getResources().getIdentifier(matrixIdentifier + "blow" , "raw", this.getPackageName());
+	  resIdNoDrinks = getResources().getIdentifier(matrixIdentifier + "nodrinks" , "raw", this.getPackageName());
+	  resIdFewDrinks = getResources().getIdentifier(matrixIdentifier + "fewdrinks" , "raw", this.getPackageName());
+	  resIdBuzz = getResources().getIdentifier(matrixIdentifier + "buzz" , "raw", this.getPackageName());
+	  resIdDrunk = getResources().getIdentifier(matrixIdentifier + "drunk" , "raw", this.getPackageName());
+	  
+	  resIdIndicator1 = getResources().getIdentifier(matrixIdentifier + "1" , "raw", this.getPackageName());
+	  resIdIndicator2 = getResources().getIdentifier(matrixIdentifier + "2" , "raw", this.getPackageName());
+	  resIdIndicator3 = getResources().getIdentifier(matrixIdentifier + "3" , "raw", this.getPackageName());
+	  resIdIndicator4 = getResources().getIdentifier(matrixIdentifier + "4" , "raw", this.getPackageName());
+	  resIdIndicator5 = getResources().getIdentifier(matrixIdentifier + "5" , "raw", this.getPackageName());
+	  resIdIndicator6 = getResources().getIdentifier(matrixIdentifier + "6" , "raw", this.getPackageName());
+	  resIdIndicator7 = getResources().getIdentifier(matrixIdentifier + "7" , "raw", this.getPackageName());
+	  resIdIndicator8 = getResources().getIdentifier(matrixIdentifier + "8" , "raw", this.getPackageName());
+	  resIdIndicator9 = getResources().getIdentifier(matrixIdentifier + "9" , "raw", this.getPackageName());
+	  resIdIndicator10 = getResources().getIdentifier(matrixIdentifier + "10" , "raw", this.getPackageName());
+	  resIdIndicator11 = getResources().getIdentifier(matrixIdentifier + "11" , "raw", this.getPackageName());
+	  
+	 //KIND = ioio.lib.api.RgbLedMatrix.Matrix.SEEEDSTUDIO_32x32; //v2 as the default
+	BitmapInputStream = getResources().openRawResource(resIdPlsWait);
+	
+	frame_ = new short [KIND.width * KIND.height];
+    BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
 		 
-     loadRGB565(); //this function loads a raw RGB565 image to the matrix
- //    try {
-//		WriteImagetoMatrix();
-//	} catch (ConnectionLostException e) {
-		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	}
+    loadRGB565(); //this function loads a raw RGB565 image to the matrix
     
-    
+    int BoardID = 0;
+	
+ 	try {
+ 		BoardID = Integer.parseInt(pixelHardwareID.substring(6,8));  //PIXL0025
+ 		//showToast(String.valueOf(BoardID));
+ 	} catch(NumberFormatException nfe) {
+ 	  // Handle parse error.
+ 	}
+ 	
+ 	 if (matrix_model > 10 && BoardID < 24 && BoardID !=0) { //we have a PIXEL V2 board pixl0025 or IOIO0401   25 or 01 pixl0025 TO DO Change this later to hardware ID
+ 		AlertDialog.Builder alert=new AlertDialog.Builder(this);
+		alert.setTitle(getResources().getString(R.string.unsupportedPanel)).setIcon(R.drawable.icon).setMessage(getResources().getString(R.string.unsupportedPanelMsg)).setNeutralButton(getResources().getString(R.string.OKText), null).show();	
+ 	 }
  }
    
-   private void WriteImagetoMatrix() throws ConnectionLostException {  //here we'll take a PNG, BMP, or whatever and convert it to RGB565 via a canvas, also we'll re-size the image if necessary
-   	
-	   
-		//originalImage = BitmapFactory.decodeResource(res, id)(imagePath);   
-	     originalImage = BitmapFactory.decodeResource(resources, R.drawable.plswait);
-	        
-	     
-	     
-		 width_original = originalImage.getWidth();
-		 height_original = originalImage.getHeight();
-		 
-		 
-		 showToast(Integer.toString(height_original));
-		 
-		 if (width_original != KIND.width || height_original != KIND.height) {
-			 resizedFlag = 1;
-			 //the iamge is not the right dimensions, so we need to re-size
-			 scaleWidth = ((float) KIND.width) / width_original;
-  		 	 scaleHeight = ((float) KIND.height) / height_original;
-  		 	 
-			//int x = 30;
-			//int y = 30;
-			 
-			//scaleWidth = ((float) x) / width_original;
-   		 	//scaleHeight = ((float) y) / height_original;
-  		 	 
-  		 	 
-	   		 // create matrix for the manipulation
-	   		 matrix2 = new Matrix();
-	   		 // resize the bit map
-	   		 matrix2.postScale(scaleWidth, scaleHeight);
-	   		 resizedBitmap = Bitmap.createBitmap(originalImage, 0, 0, width_original, height_original, matrix2, true);
-	   		 canvasBitmap = Bitmap.createBitmap(KIND.width, KIND.height, Config.RGB_565); 
-	   		 Canvas canvas = new Canvas(canvasBitmap);
-	   		 canvas.drawRGB(0,0,0); //a black background
-	   	   	 canvas.drawBitmap(resizedBitmap, 0, 0, null);
-	   		 ByteBuffer buffer = ByteBuffer.allocate(KIND.width * KIND.height *2); //Create a new buffer
-	   		 canvasBitmap.copyPixelsToBuffer(buffer); //copy the bitmap 565 to the buffer		
-	   		 BitmapBytes = buffer.array(); //copy the buffer into the type array
-		 }
-		 else {
-			// then the image is already the right dimensions, no need to waste resources resizing
-			 resizedFlag = 0;
-			 canvasBitmap = Bitmap.createBitmap(KIND.width, KIND.height, Config.RGB_565); 
-	   		 Canvas canvas = new Canvas(canvasBitmap);
-	   	   	 canvas.drawBitmap(originalImage, 0, 0, null);
-	   		 ByteBuffer buffer = ByteBuffer.allocate(KIND.width * KIND.height *2); //Create a new buffer
-	   		 canvasBitmap.copyPixelsToBuffer(buffer); //copy the bitmap 565 to the buffer		
-	   		 BitmapBytes = buffer.array(); //copy the buffer into the type array
-	   		 showToast("went here");
-		 }	   		
-		 
-		loadImage();  
-		//matrix_.frame(frame_);  //write to the matrix   
-}
+   private void updatePrefs() //here is where we read the shared preferences into variables
+   {
+   	 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);     
+   	 setPreferences();
+   }
+   
+  
 	
 	//class IOIOThread extends AbstractIOIOActivity.IOIOThread {  //only goes here if the Breathalyzer (IOIO) was detected
     class Looper extends BaseIOIOLooper {
@@ -912,27 +1016,53 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
     	public void setup() throws ConnectionLostException {
 	    //protected void setup() throws ConnectionLostException {
     		
-    		matrix_ = ioio_.openRgbLedMatrix(KIND);
-  		//	deviceFound = 1; //if we went here, then we are connected over bluetooth or USB
-  		//	connectTimer.cancel(); //we can stop this since it was found
+    		//**** let's get IOIO version info for the About Screen ****
+  			pixelFirmware = ioio_.getImplVersion(v.APP_FIRMWARE_VER);
+  			pixelBootloader = ioio_.getImplVersion(v.BOOTLOADER_VER);
+  			pixelHardwareID = ioio_.getImplVersion(v.HARDWARE_VER); 
+  			IOIOLibVersion = ioio_.getImplVersion(v.IOIOLIB_VER);
+  			//**********************************************************
+    		
+    		
+    		//matrix_ = ioio_.openRgbLedMatrix(KIND);
+  			//matrix_.frame(frame_);  //write select pic to the matrix
   			
-  			matrix_.frame(frame_);  //write select pic to the matrix
+  			if (AutoSelectPanel_ && pixelHardwareID.substring(0,4).equals("PIXL") && !pixelHardwareID.substring(4,5).equals("0")) { //only go here if we have a firmware that is set to auto-detect, otherwise we can skip this
+	  			runOnUiThread(new Runnable() 
+	  			{
+	  			   public void run() 
+	  			   {
+	  				  
+	  				   updatePrefs();
+	  				   
+	  				   try {
+	  					 matrix_ = ioio_.openRgbLedMatrix(KIND);
+	 	  	  		     matrix_.frame(frame_); //stream "select image" text to PIXEL
+					} catch (ConnectionLostException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+	  			      
+	  			   }
+	  			}); 
+  			}
+  		   
+  		   else { //we didn't auto-detect so just go the normal way
+  			  matrix_ = ioio_.openRgbLedMatrix(KIND);
+  	  		  matrix_.frame(frame_); //stream "select image" text to PIXEL
+  		   }
 						
 			try {
 				alcohol = ioio_.openAnalogInput(alcoholPinNumber);				
 				led_ = ioio_.openDigitalOutput(IOIO.LED_PIN, true); //LED_PIN is the stat LED, it's the LED on the IOIO board, just internal and not part of the Breathalyzer function			
-				heatPin = ioio_.openDigitalOutput(heatPinNumber,false);   //heat up the alcohol sensor	
+				heatPin = ioio_.openDigitalOutput(heatPinNumber,false);   //heat up the alcohol sensor, was false before	
 			//	battery = ioio_.openAnalogInput(batteryPinNumber);	
 				
 				setDetected("Connected");
 				breathalyzerFound = 1;
 				connectTimer.cancel(); //we can stop this since it was found
 				setStatus (pleaseWaitText); 
-				setBreathStatus(statusResettingText);	
-				
-				//if (debug == true) {
-				//	showToastShort("Entered IOIO Setup");
-				//}
+				setBreathStatus(statusResettingText);
 				
 				simulation = false; //if we went here, then the alcohol sensor was detected so turn this off even if it was on in preferences
 				
@@ -1002,8 +1132,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 					//breathConverted = (breathBarStatus / 3) ; //have to do this to convert to the scale used by the gauge control since the max of that one is 200
 					
 					
-			//	try {
-					//	batteryVoltage = battery.getVoltage();
+			//	try {  //this code from the ioiomint portable version with the lipo
+					//	batteryVoltage = battery.getVoltage(); 
 				//	} catch (InterruptedException e1) {
 						// TODO Auto-generated catch block
 					//	e1.printStackTrace();
@@ -1082,20 +1212,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 	//}
 	
 	   public void loadImage() {
-		  	//	try {
-		  	//		int n = BitmapInputStream.read(BitmapBytes, 0, BitmapBytes.length); // reads
-		  																				// the
-		  																				// input
-		  																				// stream
-		  																				// into
-		  																				// a
-		  																				// byte
-		  																				// array
-		  		//	Arrays.fill(BitmapBytes, n, BitmapBytes.length, (byte) 0);
-		  	//	} catch (IOException e) {
-		  	//		e.printStackTrace();
-		  	//	}
-
+		  	
 		  		int y = 0;
 		  		for (int i = 0; i < frame_.length; i++) {
 		  			frame_[i] = (short) (((short) BitmapBytes[y] & 0xFF) | (((short) BitmapBytes[y + 1] & 0xFF) << 8));
@@ -1326,7 +1443,14 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 		if (shake_start == true) {
 			mSensorManager.unregisterListener(mSensorListener); //we've started so kill the shake listener
 		}
-		breathStartNow(); //no buzzer		
+		
+		if (KioskMode_) {
+			state = 1;
+			breathStartKiosk();
+		}
+		else {
+			breathStartNow(); //no buzzer		
+		}
 	 }
 	
 	public void breathStartButtonGo() { //go straight here if it was a shake
@@ -1338,16 +1462,46 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 		breathStartNow(); 
 	 }
 	
+	public void breathStartKiosk() { //the touch event for the screen, no buzzer
+		if (shake_start == true) {
+			mSensorManager.unregisterListener(mSensorListener); //we've started so kill the shake listener
+		}
+		
+		    flipper.setInAnimation(inFromRightAnimation());
+	        flipper.setOutAnimation(outToLeftAnimation());
+	        flipper.showNext();  
+	        onHomeScreen = false;
+		
+		    setStatus2 (blowText);
+			setBreathStatus2 (statusInprogressText);
+			enableUi(false); //we've started to grey out the start button
+			//charButton_.setVisibility(View.INVISIBLE); 
+		
+			try {         	
+	           playBlowMP3();
+	         } catch (Exception e) {
+	             e.printStackTrace();
+	         }
+		
+		    state = 1; //set this state
+			baselineReading = convertReadingInt(reading);
+			 
+			if (debug == true) {
+				showToast("Alcohol Baseline Reading: " + baselineReading);
+			}	
+			 maxDifference = max_value - baselineReading; //now let's find out what the maximum difference can be between the baseline
+			 readingIncrement = maxDifference / 10; //depending on how close the user is to the max corresponds to how much they've had to drink
+		     highReading = convertReadingInt(reading); //let's also establish the high reading
+		     //start the timer
+		
+			updateGaugeTimer.start();
+	}
+	
 	public void breathStartNow() { //the touch event for the screen, no buzzer
 		if (shake_start == true) {
 			mSensorManager.unregisterListener(mSensorListener); //we've started so kill the shake listener
 		}
 		
-		//now flip the screen
-		//flipper.setInAnimation(inFromRightAnimation());
-        //flipper.setOutAnimation(outToLeftAnimation());
-        //flipper.showNext();  
-		 	
 		if (state == 0) {
 			//let's first check that the user didn't blow into the sensor before clicking the button, if the current value is higher than the resetBaseline then the user did
 			//resetCounter3 = 0; //this needs to be 0 if we are here again
@@ -1393,8 +1547,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 		   			
 		   			flipper.setInAnimation(inFromRightAnimation());
 		   	        flipper.setOutAnimation(outToLeftAnimation());
-		   	        flipper.showNext();  
-		   			//resetTimer.cancel(); //cancel it just in case it was running
+		   	        flipper.showNext(); 
+		   	        onHomeScreen = false;
 		   			setStatus2 (blowForText);
 		   			setBreathStatus2 (statusInprogressText);
 		   			enableUi(false); //we've started to grey out the start button
@@ -1432,8 +1586,6 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 		
 	}
 	
-	
-	
 	 private void playBlowMP3() throws Exception {
 					
 		switch (character) {
@@ -1453,12 +1605,6 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 				 //blowMP3 = getResources().openRawResourceFd(R.raw.blow0);
 				break;		
 		}	
-		
-	//	 BitmapInputStream = getResources().openRawResource(R.raw.blow);
-	 //    BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
-	 //    loadRGB565(); //this function loads a raw RGB565 image to the matrix
-	// 	 matrix_.frame(frame_);  //write to the matrix   
-		
 		
 		 if (tts_on == true) {
 	    	 say(blowPrompt);
@@ -1557,18 +1703,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 	 private void playnoDrinksMP3() throws Exception {
 		 
 		 result = 0;
-	
-		// SharedPreferences prefs = getSharedPreferences("stateprefs", MODE_WORLD_READABLE);
-		 //SharedPreferences.Editor editor = prefs.edit();		
-		 //editor.putString("tweet_text", tweet_no_drinks);
-		 //editor.putString("tweet_text", "testing");
-		 //editor.putString("result", getString(result));
-		// editor.putInt("state", 0);
-		// editor.putInt("result", result);
-		 //editor.commit();
 		 
-		 BitmapInputStream = getResources().openRawResource(R.raw.nodrinks);
-	     //BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
+		 BitmapInputStream = getResources().openRawResource(resIdNoDrinks);
 	     loadRGB565(); //this function loads a raw RGB565 image to the matrix
 	 	 matrix_.frame(frame_);  //write to the matrix   
 		 
@@ -1626,8 +1762,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 				break;		
 		 }		
 		 
-		 BitmapInputStream = getResources().openRawResource(R.raw.fewdrinks);
-	   //  BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
+		 BitmapInputStream = getResources().openRawResource(resIdFewDrinks);
 	     loadRGB565(); //this function loads a raw RGB565 image to the matrix
 	 	 matrix_.frame(frame_);  //write to the matrix   
 		 
@@ -1668,8 +1803,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 				break;		
 		 }	
 		 
-		 BitmapInputStream = getResources().openRawResource(R.raw.buzz);
-	   //  BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
+		 BitmapInputStream = getResources().openRawResource(resIdBuzz);
 	     loadRGB565(); //this function loads a raw RGB565 image to the matrix
 	 	 matrix_.frame(frame_);  //write to the matrix   
 		 
@@ -1711,8 +1845,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 				break;		
 		 }	
 		 
-		 BitmapInputStream = getResources().openRawResource(R.raw.drunk);
-	    // BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
+		 BitmapInputStream = getResources().openRawResource(resIdDrunk);
 	     loadRGB565(); //this function loads a raw RGB565 image to the matrix
 	 	 matrix_.frame(frame_);  //write to the matrix   
 		 
@@ -1757,8 +1890,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 				break;		
 		 }	
 		 
-		 BitmapInputStream = getResources().openRawResource(R.raw.plswait);
-	    // BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
+		 BitmapInputStream = getResources().openRawResource(resIdPlsWait);
 	     loadRGB565(); //this function loads a raw RGB565 image to the matrix
 	 	 matrix_.frame(frame_);  //write to the matrix   
 		 
@@ -2025,8 +2157,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 			public void onTick(long millisUntilFinished)				{
 					
 				//String both = name + "-" + dest;
-				blowText = blowForText + "  " + String.valueOf(millisUntilFinished / 1000);
-				setStatus2 (blowText);
+				String blowTextCountdown = blowForText + "  " + String.valueOf(millisUntilFinished / 1000);
+				setStatus2 (blowTextCountdown);
 				//countdownTimer_.setText(String.valueOf(millisUntilFinished / 1000));
 				   
 				    if (convertReadingInt(reading) > highReading) { //here we will take an alcohol sample once a second and then take the highest for the final reading
@@ -2058,6 +2190,9 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 					{
 						
 							//do nothing here
+							if (KioskMode_) {
+								updateGaugeTimer.start();
+							}
 					
 					}
 
@@ -2068,127 +2203,125 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 					debugCounter++;
 					
 					gaugeReading = convertReadingInt(reading); 
-					BitmapInputStream = getResources().openRawResource(R.raw.m1); //just in case no match below
-						//breathConverted = (breathBarStatus / 4) ;	
+					BitmapInputStream = getResources().openRawResource(resIdIndicator1); //just in case no match below
+						
 						 
 						 if (gaugeReading <= baselineReading) {
  							 gaugeValue = 0;	
  							 meterMatch = 1;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m1);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator1);
+ 							 
+ 							
  						 }
  						 
  						 if (gaugeReading > baselineReading && gaugeReading < (baselineReading + readingIncrement)) { //1
  							 gaugeValue = 1;
  							 meterMatch = 2;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m2);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator2);
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement) && gaugeReading < (baselineReading + readingIncrement*2)) { //2
  							 gaugeValue = 2;
  							 meterMatch = 3;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m3);
+							 BitmapInputStream = getResources().openRawResource(resIdIndicator3);
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*2) && gaugeReading < (baselineReading + readingIncrement*3)) { //3
  							 gaugeValue = 3;
  							 meterMatch = 4;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m4);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator4);
  						     							
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*3) && gaugeReading < (baselineReading + readingIncrement*4)) { //4
  							 gaugeValue = 4;
  							 meterMatch = 5;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m5);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator5);
  							
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*4) && gaugeReading < (baselineReading + readingIncrement*5)) { //5
  							 gaugeValue = 5;
  							 meterMatch = 6;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m6);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator6);
  							
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*5) && gaugeReading < (baselineReading + readingIncrement*6)) { //6
  							 gaugeValue = 6;
  							 meterMatch = 7;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m7);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator7);
  							
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*6) && gaugeReading < (baselineReading + readingIncrement*7)) { //7
  							 gaugeValue = 7;
  							 meterMatch = 8;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m8);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator8);
  							
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*7) && gaugeReading < (baselineReading + readingIncrement*8)) { //8
  							 gaugeValue = 8;
  							 meterMatch = 9;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m9);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator9);
  							
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*8) && gaugeReading < (baselineReading + readingIncrement*9)) { //9
  							 gaugeValue = 9;
  							 meterMatch = 10;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m10);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator10);
  							
  						 }
  						 
  						 if (gaugeReading > (baselineReading + readingIncrement*9) && convertReadingInt(reading) != 0) { 
  							 gaugeValue = 10;
  							 meterMatch = 11;
- 							 BitmapInputStream = getResources().openRawResource(R.raw.m11);
+ 							 BitmapInputStream = getResources().openRawResource(resIdIndicator11);
  							
 						 }
  						 
  						//if the alcohol sensor returned a value that didn't match so let's just use the last reading for PIXEL here
  						 if (meterMatch == 0) {  
  							 
- 							// showToast ("went here");
+ 							
  							 switch (meterMatch) {
  							
 	  						 	case 1:					
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m1);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator1);
 	  						 		break;					
 	  						 	case 2:		
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m2);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator2);
 	  						 		break;		
 	  						 	case 3:				
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m3);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator3);
 	  						 		break;		
 	  						 	case 4:				
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m4);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator4);
 	  						 		break;		
 	  						 	case 5:					
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m5);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator5);
 	  						 		break;	
 	  						 	case 6:					
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m6);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator6);
 	  						 		break;					
 	  						 	case 7:		
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m7);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator7);
 	  						 		break;		
 	  						 	case 8:				
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m8);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator8);
 	  						 		break;		
 	  						 	case 9:				
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m9);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator9);
 	  						 		break;		
 	  						 	case 10:					
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m10);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator10);
 	  						 		break;	
 	  						 	case 11:					
-	  						 		BitmapInputStream = getResources().openRawResource(R.raw.m11);
+	  						 		BitmapInputStream = getResources().openRawResource(resIdIndicator11);
 	  						 		break;	
   						   }
- 							 
- 							//if (BitmapInputStream == null) {
- 							//	BitmapInputStream = getResources().openRawResource(R.raw.m1); //just in case no match below
- 							//}
  							 
  						 }
  						 
@@ -2199,7 +2332,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}  //write to the matrix   
-						 	meterMatch = 0; //reset this one
+						 	//meterMatch = 0; //reset this one, TO DO should we get rid of this?
 						
  						//Log.i("gauge:"+debugCounter, "GaugeReading " + String.valueOf(gaugeReading));
  						//Log.i("gauge:"+debugCounter, "GaugeValue " +String.valueOf(gaugeValue));
@@ -2210,17 +2343,6 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 						runOnUiThread(new Runnable() {
 						     public void run() {
 						    	 meter2.setValue(gaugeValue); //set the gauge on the android phone
-						    	 
-						    	 //write to PIXEL
-						    	// BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
-		 						 //    loadRGB565(); //this function loads a raw RGB565 image to the matrix
-		 						 //	 try {
-									//	matrix_.frame(frame_);
-									//} catch (ConnectionLostException e) {
-										// TODO Auto-generated catch block
-									//	e.printStackTrace();
-									//}  //write to the matrix   
-		 						 	//meterMatch = 0; //reset this one
 						    }
 						});
 					    
@@ -2237,19 +2359,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 
 		@Override
 		public void onFinish()
-			{				
-				
-			
-			// BitmapInputStream = getResources().openRawResource(R.raw.ready);
-		    // BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
-		    // loadRGB565(); //this function loads a raw RGB565 image to the matrix
-		 	// try {
-		//		matrix_.frame(frame_);
-		//	} catch (ConnectionLostException e1) {
-				// TODO Auto-generated catch block
-		//		e1.printStackTrace();
-		//	}  //write to the matrix   
-			
+			{	
 					setStatus (tapTobeginText);
 					setBreathStatus(statusReadyText);
 					try {   //play a ready beep      	
@@ -2286,8 +2396,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 							setStatus (tapTobeginText); 	
 					     	setBreathStatus(statusReadyText);
 					   
-					     	BitmapInputStream = getResources().openRawResource(R.raw.ready);
-					     	//BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
+					     	BitmapInputStream = getResources().openRawResource(resIdReady);
 					     	loadRGB565(); //this function loads a raw RGB565 image to the matrix
 					     	try {
 					     		matrix_.frame(frame_);
@@ -2394,7 +2503,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 			
 			flipper.setInAnimation(inFromLeftAnimation());
 	        flipper.setOutAnimation(outToRightAnimation());
-	        flipper.showPrevious();      
+	        flipper.showPrevious();    
+	        onHomeScreen = true;
 							
 	        if (simulation == true && breathalyzerFound == 0) {
 				 setStatus (tapTobeginText); 
@@ -2419,8 +2529,7 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 				setLevelStatus("");
 				state = 0;		//now set the state back to the visual progress bar shows back to warming up mode
 				//breathIndicator.setMax(max_value - warmupOffset); //set the scale back to the way it was
-				 BitmapInputStream = getResources().openRawResource(R.raw.plswait);
-			    // BitmapBytes = new byte[KIND.width * KIND.height *2]; //512 * 2 = 1024 or 1024 * 2 = 2048
+				 BitmapInputStream = getResources().openRawResource(resIdPlsWait);
 			     loadRGB565(); //this function loads a raw RGB565 image to the matrix
 			 	 try {
 					matrix_.frame(frame_);
@@ -2437,29 +2546,23 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 			//not used
 		}
 	}
-	
-	private void actionButtons() {
-		  
-		 // String resultstring = String.valueOf(result);
-		  Intent myIntent = new Intent(getApplicationContext(), action.class);
-          myIntent.putExtra("BREATH_RESULT", String.valueOf(result));          
-          startActivity(myIntent);
-	}
-		
 		
 	@Override
     public void onDestroy() {
-    	
-		//if (debug == true) {
-		//	Toast.makeText(getBaseContext(), "On Destroy", Toast.LENGTH_LONG).show();
-		//}
 		
-		connectTimer.cancel();  //if user closes the program, need to kill this timer or we'll get a crash
+		if (breathTimer != null) breathTimer.cancel(); 
+ 		if (updateGaugeTimer != null) updateGaugeTimer.cancel();
+ 		if (connectTimer != null) connectTimer.cancel(); 
+ 		if (analyzingTimer != null) analyzingTimer.cancel();
+ 		if (resetTimer != null) resetTimer.cancel(); 
+ 		if (clearTextTimer != null) clearTextTimer.cancel();
+		
+		/*connectTimer.cancel();  //if user closes the program, need to kill this timer or we'll get a crash
     	breathTimer.cancel(); 
         analyzingTimer.cancel();
         resetTimer.cancel(); 
      //   batteryTimer.cancel(); 
-        clearTextTimer.cancel(); 
+        clearTextTimer.cancel(); */
     	
     	
     	if (tts != null) {
@@ -2497,7 +2600,8 @@ public class breath extends IOIOActivity implements TextToSpeech.OnInitListener 
 		//	showToastShort("On Resume");
 		//}		
 		super.onResume();
-		
+		this.prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        updatePrefs();
 	}
 
 	

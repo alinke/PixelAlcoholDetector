@@ -129,7 +129,8 @@
    
     <!--Text Prompts -->
      
-   <string name="blowForText">吹气...</string>    
+   <string name="blowForText">吹气...</string>   
+   <string name="blowText">Blow</string>    
    <string name="pleaseWaitText">请稍等...</string>   
    <string name="statusSimulationModeText">仿真模式</string>
    <string name="statusResettingText">重新设置</string>
@@ -280,7 +281,6 @@
     <string name="actions_facebook_welcome">Logged into Facebook as</string>  
     <string name="pref_hideTaximagicTitle">Hide Taxi Magic</string>
     <string name="pref_hideTaximagicSummary">Non US users may want to hide the Taxi Magic button</string>
-    <string name="menu_about_title">About</string>
     <string name="menu_about_summary">Version 1.0\n\nMore info at http://droidalyzer.com\n\nDesigned by Open Gadgets LLC</string>
     <string name="pref_facebook_post_default">true</string>
     <string name="pref_twitter_post_default">false</string>
@@ -298,6 +298,6 @@
     <string name="batteryInfoStringTitle">Droidalyzer Battery</string>
     
      <string name="bluetooth_pair">Blueooth Pairing</string>
-    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to IOIO using code: 4545</string>
+    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to IOIO using code: 0000</string>
     
 </resources>

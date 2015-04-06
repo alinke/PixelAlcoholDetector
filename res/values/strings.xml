@@ -26,10 +26,19 @@
     <string name="tts_drunk">You are quite drunk!</string>  
     <string name="pref_countdown">pref_countdown</string> 
     <string name="countdown_duration">6</string>
+    
+    
     <string name="pref_min_baseline">pref_min_baseline</string>   
     <string name="min_baseline">550</string>
     <string name="pref_max_value">pref_max_value</string>       
-    <string name="max_value">850</string>  
+    <string name="max_value">700</string>  
+    
+     <string name="pref_alcoholPin">pref_alcoholPin</string>   
+    <string name="alcoholPin">Alcohol Sensor Pin</string>
+    <string name="alcoholPinDefault">35</string>       
+    <string name="alcoholPinSummary">Refer to the labels on the connectors for the pin number</string>  
+    
+     
     <string name="pref_friend_phone">pref_friend_phone</string> 
     <string name="friend_phone">4085550100</string>  
     <string name="pref_taxi_phone">pref_taxi_phone</string> 
@@ -99,11 +108,11 @@
    <string name="userAcceptanceString">"PIXEL Breathalyzer is NOT a professional Breathalyzer and is for novelty use only. \n\nDo not use this app to determine whether you should drive.\n\nPlease Drink Responsibly"</string>
    <string name="userAcceptanceStringTitle">Novelty Use Only</string>
    <string name="setupInstructionsString">1. Plug the Grove Gas Sensor http://www.seeedstudio.com/depot/grove-gas-sensormq5-p-938.html?cPath=25_27 into the second open Grove port which will be labeled 33 and 34. \n\n
-       				2. Pair your phone to PIXEL which will show up as PIXEL in Bluetooth settings, using code 4545 if your phone is Android 2.3.3 and above. \n\n
+       				2. Pair your phone to PIXEL which will show up as PIXEL in Bluetooth settings, using code 0000 if your phone is Android 2.3.3 and above. \n\n
 	       			3. This app is for entertainment purposes only and is not a professional Breathalyzer. Do not use this app as a tool to determine whether you should operate a motor vehicle or equipment.\n\n
 	       			</string>
    <string name="setupInstructionsStringTitle">Setup</string>   
-   <string name="notFoundString">"If using Bluetooth, make sure you've Bluetooth paired to the device using code 4545.\n\nIf connecting with a USB cable, ensure USB Debugging is turned on from Settings --> Applications --> Development --> USB debugging"</string>
+   <string name="notFoundString">"If using Bluetooth, make sure you've Bluetooth paired to the device using code 0000.\n\nIf connecting with a USB cable, ensure USB Debugging is turned on from Settings --> Applications --> Development --> USB debugging"</string>
    <string name="notFoundStringTitle">Alcohol Detector Not Found</string>   
    <string name="instructionsString">After tapping the beer icon to begin, breathe into the alcohol sensor as if you were fogging up a window or say "haaaaaaaaah". Do not touch the sensor with your lips.\n\nTap the character icon to select different voices as well as other settings.\n\nWait at least 20 minutes after drinking, eating , or smoking before testing.\n\nThis app is for entertainment purposes only. Please Drink Responsibly.</string>
    <string name="instructionsStringTitle">Instructions</string>   
@@ -123,7 +132,8 @@
    
     <!--Text Prompts -->
      
-   <string name="blowForText">Blow For...</string>    
+   <string name="blowForText">Blow For...</string>   
+   <string name="blowText">Blow</string>     
    <string name="pleaseWaitText">Please Wait...</string>   
    <string name="statusSimulationModeText">Simulation Mode</string>
    <string name="statusResettingText">Resetting</string>
@@ -295,12 +305,26 @@
     <string name="batteryInfoStringTitle">Droidalyzer Battery</string>
     
     <string name="bluetooth_pair">Blueooth Pairing</string>
-    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to PIXEL using code: 4545</string>
+    <string name="bluetooth_pairSummary">Shortcut to the Bluetooth settings screen. Pair to PIXEL using code: 0000</string>
     
-    
+    <string name="KioskMode">Kiosk Mode</string>    
+    <string name="pref_KioskMode">pref_KioskMode</string>
+    <string name="pref_KioskModeDefault">false</string>
+    <string name="KioskModeSummary">Just shows the alcohol level visualization from the sensor with no prompts</string>
    
+    <string name="unsupportedPanel">Incompatible LED Panel</string>    
+    <string name="unsupportedPanelMsg">Very Sorry&#8230;\n\nThe LED Panel you have selected is not compatible with your PIXEL board.\n\nYou would need to upgrade to a PIXEL v2.5 or higher board to support this LED panel\n\nPlease now change the LED panel to a supported one.</string>
     
+    <string name="AutoSelectPanel">Auto Select PIXEL / LED Panel</string>    
+    <string name="pref_AutoSelectPanel">pref_AutoSelectPanel</string>
+    <string name="pref_AutoSelectPanelDefault">true</string>
+    <string name="AutoSelectPanelSummary">Turn this off if you want to manually select the LED panel</string>
     
+     <string name="selected_matrix">selected_matrix</string>
+    <string name="matrix">PIXEL Model</string>
+    <string name="matrixSummary">Choose between standard PIXEL, SUPER PIXEL, or other LED panel types</string>    
+    <string name="dialogTitleMatrix">PIXEL Model</string>
+    <string name="matrix_default_value">3</string>   
     
     
     
